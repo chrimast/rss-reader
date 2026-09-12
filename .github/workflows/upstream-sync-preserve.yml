@@ -28,6 +28,7 @@ jobs:
         env:
           UPSTREAM_REPO: srcrs/rss-reader
           UPSTREAM_BRANCH: main
+          FORK_BRANCH: main
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -35,12 +36,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add upstream "https://github.com/${UPSTREAM_REPO}.git" 2>/dev/null || true
           git fetch --no-tags upstream "${UPSTREAM_BRANCH}"
-
           fork_head="$(git rev-parse HEAD)"
           backup_tag="upstream-sync-backup-${GITHUB_RUN_ID}"
           git tag "${backup_tag}" HEAD
           git push origin "${backup_tag}"
-
           set +e
           git merge --no-ff --no-commit -X ours "upstream/${UPSTREAM_BRANCH}"
           merge_status=$?
@@ -59,9 +58,6 @@ jobs:
             rm -f "$conflict_file"
             git add -A
           fi
-
-          # GITHUB_TOKEN cannot update workflow files. Keep the fork's
-          # workflow directory so this generic sync can push successfully.
           while IFS= read -r path; do
             if git cat-file -e "${fork_head}:${path}" 2>/dev/null; then
               git checkout "${fork_head}" -- "$path"
@@ -70,10 +66,8 @@ jobs:
             fi
           done < <(git diff --name-only "${fork_head}" -- .github/workflows)
           git add -A -- .github/workflows
-
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             git commit --no-edit -m "chore: sync upstream ${UPSTREAM_BRANCH} while preserving fork changes"
           fi
-
           git diff --check
-          git push origin HEAD:main
+          git push origin "HEAD:${FORK_BRANCH}"
