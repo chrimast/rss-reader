@@ -24,13 +24,13 @@ jobs:
           fetch-depth: 0
       - name: Merge upstream without overwriting fork changes
         env:
-          srcrs/rss-reader_REPO: srcrs/rss-reader
-          srcrs/rss-reader_main: UPmain
+          UPSTREAM_REPO: srcrs/rss-reader
+          UPSTREAM_BRANCH: main
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add upstream "https://github.com/${srcrs/rss-reader_REPO}.git" 2>/dev/null || true
-          git fetch --no-tags upstream "${srcrs/rss-reader_main}"
-          git merge --no-ff --no-edit "upstream/${srcrs/rss-reader_main}"
+          git remote add upstream "https://github.com/${UPSTREAM_REPO}.git" 2>/dev/null || true
+          git fetch --no-tags upstream "${UPSTREAM_BRANCH}"
+          git merge --no-ff --no-edit "upstream/${UPSTREAM_BRANCH}"
           git push origin HEAD:main
